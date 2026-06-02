@@ -294,6 +294,16 @@ function renderTodoList() {
 
   const filteredTodoItems = getFilteredTodoItems();
 
+  if (filteredTodoItems.length === 0) {
+    const emptyMessageElement = document.createElement("li");
+    emptyMessageElement.className = "empty-todo-message";
+    emptyMessageElement.textContent = "아직 일정이 없습니다.";
+    todoListElement.appendChild(emptyMessageElement);
+
+    updateFilterButtonStyles();
+    return;
+  }
+
   filteredTodoItems.forEach((todoItem) => {
     const todoListItemElement = document.createElement("li");
     todoListItemElement.className = "todo-item";
