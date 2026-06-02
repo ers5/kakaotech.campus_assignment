@@ -41,9 +41,8 @@ body {
 
 .date-navigation {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
   margin-top: 18px;
   padding: 12px;
   border: 1px solid var(--border-color);
@@ -51,9 +50,16 @@ body {
   background-color: #faf9ff;
 }
 
+.week-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .date-button {
   height: 36px;
-  min-width: 64px;
+  min-width: 78px;
   padding: 0 12px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -71,6 +77,79 @@ body {
   margin: 0;
   font-weight: 600;
   color: var(--primary-color);
+}
+
+.week-date-list {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.week-date-button {
+  width: 100%;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: #fff;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.week-date-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.week-date-button.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(103, 43, 224, 0.1);
+  color: var(--primary-color);
+}
+
+.week-date-button.today {
+  box-shadow: inset 0 0 0 2px rgba(103, 43, 224, 0.35);
+}
+
+.week-date-button.today .week-date-day {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.week-date-weekday {
+  font-size: 13px;
+  color: var(--muted-text-color);
+}
+
+.week-date-button.selected .week-date-weekday,
+.week-date-button:hover .week-date-weekday {
+  color: inherit;
+}
+
+.week-date-day {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.week-date-count {
+  font-size: 12px;
+  color: var(--muted-text-color);
+}
+
+.week-date-button.selected .week-date-count,
+.week-date-button:hover .week-date-count {
+  color: inherit;
 }
 
 .todo-input-section {
@@ -217,8 +296,27 @@ body {
   }
 
   .date-navigation {
+    padding: 10px;
+  }
+
+  .week-navigation {
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .week-date-list {
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .week-date-item {
+    min-width: 58px;
+  }
+
+  .week-date-button {
+    min-height: 78px;
+    padding: 8px 4px;
   }
 
   .todo-item {

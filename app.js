@@ -8,8 +8,9 @@ const TODO_STORAGE_KEY = "todoItems";
 let currentFilterType = "all";
 
 // 현재 보고 있는 날짜를 관리합니다.
-let selectedDate = new Date();
-selectedDate.setHours(0, 0, 0, 0);
+let selectedDate = normalizeDate(new Date());
+
+const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
 // 주요 DOM 요소를 한 곳에서 관리합니다.
 const todoInputElement = document.getElementById("todoInput");
@@ -17,9 +18,10 @@ const addTodoButtonElement = document.getElementById("addTodoButton");
 const inputMessageElement = document.getElementById("inputMessage");
 const todoListElement = document.getElementById("todoList");
 const filterButtonElements = document.querySelectorAll(".filter-button");
-const previousDateButtonElement = document.getElementById("previousDateButton");
-const nextDateButtonElement = document.getElementById("nextDateButton");
+const previousWeekButtonElement = document.getElementById("previousWeekButton");
+const nextWeekButtonElement = document.getElementById("nextWeekButton");
 const selectedDateTextElement = document.getElementById("selectedDateText");
+const weekDateListElement = document.getElementById("weekDateList");
 
 // Todo 배열을 로컬스토리지에 저장합니다.
 function saveTodoItemsToLocalStorage() {
@@ -65,6 +67,13 @@ function formatDateKey(dateValue) {
   return `${year}-${month}-${day}`;
 }
 
+// 날짜 값을 자정 기준으로 정규화합니다.
+function normalizeDate(dateValue) {
+  const normalizedDate = new Date(dateValue);
+  normalizedDate.setHours(0, 0, 0, 0);
+  return normalizedDate;
+}
+
 // 선택 날짜 표시 문자열(YYYY년 M월 D일)을 만듭니다.
 function formatDisplayDate(dateValue) {
   const year = dateValue.getFullYear();
@@ -75,7 +84,91 @@ function formatDisplayDate(dateValue) {
 
 // 화면 상단의 날짜 텍스트를 업데이트합니다.
 function updateSelectedDateText() {
-  selectedDateTextElement.textContent = formatDisplayDate(selectedDate);
+  selectedDateTextElement.textContent = `${formatDisplayDate(selectedDate)} 선택됨`;
+}
+
+// 선택 날짜가 속한 주의 월요일 날짜를 반환합니다.
+function getWeekStartDate(dateValue) {
+  const weekStartDate = normalizeDate(dateValue);
+  const dayOfWeek = weekStartDate.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  weekStartDate.setDate(weekStartDate.getDate() + mondayOffset);
+  return weekStartDate;
+}
+
+// 선택 주간의 월요일부터 일요일까지 날짜 배열을 반환합니다.
+function getWeekDates(dateValue) {
+  const weekStartDate = getWeekStartDate(dateValue);
+
+  return Array.from({ length: 7 }, (_, dayIndex) => {
+    const weekDate = new Date(weekStartDate);
+    weekDate.setDate(weekStartDate.getDate() + dayIndex);
+    return weekDate;
+  });
+}
+
+// 특정 날짜에 등록된 Todo 개수를 반환합니다.
+function getTodoCountForDate(dateValue) {
+  const dateKey = formatDateKey(dateValue);
+  return todoItems.filter((todoItem) => todoItem.dateKey === dateKey).length;
+}
+
+// 선택 주간의 날짜 버튼 목록을 렌더링합니다.
+function renderWeekDateList() {
+  weekDateListElement.innerHTML = "";
+
+  const todayKey = formatDateKey(new Date());
+  const selectedDateKey = formatDateKey(selectedDate);
+  const weekDates = getWeekDates(selectedDate);
+
+  weekDates.forEach((weekDate, dayIndex) => {
+    const weekDateKey = formatDateKey(weekDate);
+    const isSelectedDate = weekDateKey === selectedDateKey;
+    const isToday = weekDateKey === todayKey;
+    const todoCount = getTodoCountForDate(weekDate);
+
+    const weekDateItemElement = document.createElement("div");
+    weekDateItemElement.className = "week-date-item";
+    weekDateItemElement.setAttribute("role", "listitem");
+
+    const weekDateButtonElement = document.createElement("button");
+    weekDateButtonElement.className = "week-date-button";
+    weekDateButtonElement.type = "button";
+    weekDateButtonElement.setAttribute("aria-pressed", String(isSelectedDate));
+    weekDateButtonElement.setAttribute(
+      "aria-label",
+      `${formatDisplayDate(weekDate)} ${WEEKDAY_LABELS[dayIndex]}요일, Todo ${todoCount}개`
+    );
+
+    if (isSelectedDate) {
+      weekDateButtonElement.classList.add("selected");
+    }
+
+    if (isToday) {
+      weekDateButtonElement.classList.add("today");
+    }
+
+    const weekdayElement = document.createElement("span");
+    weekdayElement.className = "week-date-weekday";
+    weekdayElement.textContent = WEEKDAY_LABELS[dayIndex];
+
+    const dateElement = document.createElement("span");
+    dateElement.className = "week-date-day";
+    dateElement.textContent = String(weekDate.getDate());
+
+    const countElement = document.createElement("span");
+    countElement.className = "week-date-count";
+    countElement.textContent = `${todoCount}개`;
+
+    weekDateButtonElement.append(weekdayElement, dateElement, countElement);
+    weekDateButtonElement.addEventListener("click", () => {
+      selectedDate = normalizeDate(weekDate);
+      renderTodoList();
+    });
+
+    weekDateItemElement.appendChild(weekDateButtonElement);
+    weekDateListElement.appendChild(weekDateItemElement);
+  });
 }
 
 // Todo를 새로 생성합니다.
@@ -185,12 +278,11 @@ function updateFilterButtonStyles() {
   });
 }
 
-// 날짜를 하루 단위로 이동합니다.
-function moveSelectedDate(dayOffset) {
+// 날짜를 주 단위로 이동합니다.
+function moveSelectedWeek(weekOffset) {
   const movedDate = new Date(selectedDate);
-  movedDate.setDate(movedDate.getDate() + dayOffset);
-  movedDate.setHours(0, 0, 0, 0);
-  selectedDate = movedDate;
+  movedDate.setDate(movedDate.getDate() + weekOffset * 7);
+  selectedDate = normalizeDate(movedDate);
   renderTodoList();
 }
 
@@ -198,6 +290,7 @@ function moveSelectedDate(dayOffset) {
 function renderTodoList() {
   todoListElement.innerHTML = "";
   updateSelectedDateText();
+  renderWeekDateList();
 
   const filteredTodoItems = getFilteredTodoItems();
 
@@ -260,9 +353,9 @@ filterButtonElements.forEach((filterButtonElement) => {
   });
 });
 
-// 날짜 이동 버튼 클릭 시 선택 날짜를 변경합니다.
-previousDateButtonElement.addEventListener("click", () => moveSelectedDate(-1));
-nextDateButtonElement.addEventListener("click", () => moveSelectedDate(1));
+// 주간 이동 버튼 클릭 시 선택 날짜가 속한 주차를 변경합니다.
+previousWeekButtonElement.addEventListener("click", () => moveSelectedWeek(-1));
+nextWeekButtonElement.addEventListener("click", () => moveSelectedWeek(1));
 
 // 초기 렌더링 전에 로컬스토리지 데이터를 복원합니다.
 loadTodoItemsFromLocalStorage();

@@ -13,10 +13,13 @@
         <p>오늘의 할 일을 간단하게 관리해보세요.</p>
       </header>
 
-      <section class="date-navigation" aria-label="날짜 이동">
-        <button id="previousDateButton" class="date-button" type="button">이전</button>
-        <p id="selectedDateText" class="selected-date-text" aria-live="polite"></p>
-        <button id="nextDateButton" class="date-button" type="button">다음</button>
+      <section class="date-navigation" aria-label="주간 날짜 선택">
+        <div class="week-navigation">
+          <button id="previousWeekButton" class="date-button" type="button">이전 주</button>
+          <p id="selectedDateText" class="selected-date-text" aria-live="polite"></p>
+          <button id="nextWeekButton" class="date-button" type="button">다음 주</button>
+        </div>
+        <div id="weekDateList" class="week-date-list" role="list"></div>
       </section>
 
       <section class="todo-input-section" aria-label="Todo 입력 영역">
