@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import DateSelector from './components/DateSelector'
+import TodoHeader from './components/TodoHeader'
+import TodoPanel from './components/TodoPanel'
 import './App.css'
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일']
@@ -225,187 +228,51 @@ function App() {
     cancelEdit()
   }
 
+  const changeFilter = (filterValue) => {
+    setCurrentFilter(filterValue)
+    cancelEdit()
+  }
+
   return (
     <main className="todo-app">
-      <header className="todo-header">
-        <div>
-          <h1>주간 Todo</h1>
-          <p>날짜를 선택하면 해당 날짜의 할 일만 표시됩니다.</p>
-        </div>
-        <div className="week-controls" aria-label="주간 이동">
-          <button type="button" className="week-button" onClick={() => moveWeek(-1)}>
-            이전 주
-          </button>
-          <strong className="week-range">
-            {formatDate(weekStartDate)} - {formatDate(weekEndDate)}
-          </strong>
-          <button type="button" className="week-button" onClick={() => moveWeek(1)}>
-            다음 주
-          </button>
-        </div>
-      </header>
+      <TodoHeader
+        weekStartDate={weekStartDate}
+        weekEndDate={weekEndDate}
+        formatDate={formatDate}
+        onMoveWeek={moveWeek}
+      />
 
-      <section className="date-selector" aria-label="날짜 선택">
-        {weekDates.map((date, index) => {
-          const dateKey = createDateKey(date)
-          const isSelected = dateKey === selectedDateKey
-          const isToday = dateKey === createDateKey(today)
-          const todoCount = todos.filter((todo) => todo.dateKey === dateKey).length
+      <DateSelector
+        weekDates={weekDates}
+        dayLabels={DAY_LABELS}
+        selectedDateKey={selectedDateKey}
+        todayKey={createDateKey(today)}
+        todos={todos}
+        createDateKey={createDateKey}
+        onSelectDate={selectDate}
+      />
 
-          return (
-            <button
-              className={`date-card${isSelected ? ' selected' : ''}${isToday ? ' today' : ''}`}
-              type="button"
-              key={dateKey}
-              aria-pressed={isSelected}
-              onClick={() => selectDate(date)}
-            >
-              <span className="date-weekday">{DAY_LABELS[index]}</span>
-              <strong className="date-day">{date.getDate()}</strong>
-              <span className="date-count">{todoCount}개</span>
-            </button>
-          )
-        })}
-      </section>
-
-      <section className="selected-panel" aria-label="선택한 날짜 Todo 목록">
-        <div className="selected-summary">
-          <div>
-            <strong>{formatSelectedDate(selectedDate)}</strong>
-            <span>
-              전체 {selectedTodos.length}개 / 진행 중{' '}
-              {selectedTodos.filter((todo) => !todo.completed).length}개 / 완료{' '}
-              {selectedTodos.filter((todo) => todo.completed).length}개
-            </span>
-          </div>
-        </div>
-
-        <form
-          className="todo-form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            addTodo()
-          }}
-        >
-          <label className="visually-hidden" htmlFor="todo-input">
-            할 일 입력
-          </label>
-          <input
-            id="todo-input"
-            className="todo-input"
-            type="text"
-            value={todoText}
-            onChange={(event) => setTodoText(event.target.value)}
-            placeholder="선택한 날짜에 할 일 추가"
-            maxLength={100}
-          />
-          <button className="primary-button" type="submit">
-            추가
-          </button>
-        </form>
-
-        <p className="input-message" role="status" aria-live="polite">
-          {message}
-        </p>
-
-        <div className="filter-controls" aria-label="Todo 상태 필터">
-          {FILTER_OPTIONS.map((filterOption) => (
-            <button
-              className={`filter-button${
-                currentFilter === filterOption.value ? ' selected' : ''
-              }`}
-              type="button"
-              key={filterOption.value}
-              aria-pressed={currentFilter === filterOption.value}
-              onClick={() => {
-                setCurrentFilter(filterOption.value)
-                cancelEdit()
-              }}
-            >
-              {filterOption.label}
-            </button>
-          ))}
-        </div>
-
-        {filteredTodos.length === 0 ? (
-          <p className="empty-message">
-            {selectedTodos.length === 0
-              ? '선택한 날짜에 등록된 할 일이 없습니다.'
-              : '현재 필터에 맞는 할 일이 없습니다.'}
-          </p>
-        ) : (
-          <ul className="todo-list">
-            {filteredTodos.map((todo) => {
-              const isEditing = editingTodoId === todo.id
-
-              return (
-                <li className={`todo-item${todo.completed ? ' completed' : ''}`} key={todo.id}>
-                  {isEditing ? (
-                    <input
-                      className="edit-input"
-                      type="text"
-                      value={editingText}
-                      onChange={(event) => setEditingText(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          saveEdit(todo.id)
-                        }
-
-                        if (event.key === 'Escape') {
-                          cancelEdit()
-                        }
-                      }}
-                      maxLength={100}
-                      autoFocus
-                    />
-                  ) : (
-                    <p className="todo-text">{todo.text}</p>
-                  )}
-
-                  <div className="todo-actions">
-                    {isEditing ? (
-                      <>
-                        <button
-                          className="action-button"
-                          type="button"
-                          onClick={() => saveEdit(todo.id)}
-                        >
-                          저장
-                        </button>
-                        <button className="action-button" type="button" onClick={cancelEdit}>
-                          취소
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="action-button"
-                        type="button"
-                        onClick={() => startEdit(todo)}
-                      >
-                        수정
-                      </button>
-                    )}
-                    <button
-                      className="action-button"
-                      type="button"
-                      onClick={() => toggleTodoCompletion(todo.id)}
-                    >
-                      {todo.completed ? '완료 해제' : '완료'}
-                    </button>
-                    <button
-                      className="action-button delete"
-                      type="button"
-                      onClick={() => deleteTodo(todo.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
+      <TodoPanel
+        selectedDate={selectedDate}
+        selectedTodos={selectedTodos}
+        filteredTodos={filteredTodos}
+        currentFilter={currentFilter}
+        filterOptions={FILTER_OPTIONS}
+        todoText={todoText}
+        editingTodoId={editingTodoId}
+        editingText={editingText}
+        message={message}
+        formatSelectedDate={formatSelectedDate}
+        onAddTodo={addTodo}
+        onTodoTextChange={setTodoText}
+        onFilterChange={changeFilter}
+        onStartEdit={startEdit}
+        onSaveEdit={saveEdit}
+        onCancelEdit={cancelEdit}
+        onEditingTextChange={setEditingText}
+        onToggleTodoCompletion={toggleTodoCompletion}
+        onDeleteTodo={deleteTodo}
+      />
     </main>
   )
 }
