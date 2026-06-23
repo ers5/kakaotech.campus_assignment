@@ -1,8 +1,8 @@
 # Assignment 3
 
-Next.js App Router frontend and FastAPI backend for the weekly Todo app.
+기존 React 기반 Todo 앱을 Next.js로 마이그레이션한 과제입니다.
 
-## Backend
+## 백엔드
 
 ```bash
 cd backend
@@ -12,9 +12,8 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The API runs on `http://localhost:8000`.
 
-## Frontend
+## 프론트엔드
 
 ```bash
 cd frontend
@@ -22,11 +21,10 @@ npm install
 npm run dev
 ```
 
-The app runs on `http://localhost:3000`.
 
 ## API
 
-- `GET /todos?week_start=YYYY-MM-DD`: returns todos from the given Sunday through Saturday.
-- `POST /todos`: creates a todo.
-- `PUT /todos/{todo_id}`: updates a todo by id.
-- `DELETE /todos/{todo_id}`: deletes a todo by id.
+- `GET /todos?week_start=YYYY-MM-DD`: 특정주의 모든 Todo를 가져옵니다
+- `POST /todos`: Todo를 생성하여 DB에 저장합니다
+- `PUT /todos/{todo_id}`: DB에 있는 Todo를 ID를 기준으로 찾아서, 수정합니다
+- `DELETE /todos/{todo_id}`: DB에 있는 Todo를 ID를 기준으로 찾아서 삭제합니다
