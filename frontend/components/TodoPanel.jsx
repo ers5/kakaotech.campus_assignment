@@ -6,6 +6,7 @@ export default function TodoPanel({
   filteredTodos,
   currentFilter,
   filterOptions,
+  searchQuery,
   todoText,
   editingTodoId,
   editingText,
@@ -15,6 +16,7 @@ export default function TodoPanel({
   onAddTodo,
   onTodoTextChange,
   onFilterChange,
+  onSearchChange,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -78,6 +80,21 @@ export default function TodoPanel({
             {filterOption.label}
           </button>
         ))}
+      </div>
+
+      <div className="search-container">
+        <label className="visually-hidden" htmlFor="search-input">
+          Todo 검색
+        </label>
+        <input
+          id="search-input"
+          type="text"
+          className="search-input"
+          placeholder="Todo 검색..."
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          disabled={isLoading}
+        />
       </div>
 
       {filteredTodos.length === 0 ? (

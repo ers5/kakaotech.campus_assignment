@@ -34,14 +34,24 @@ def health_check():
 @app.get("/todos", response_model=list[TodoResponse])
 def get_week_todos(
     week_start: date = Query(..., description="Sunday date for the current week"),
+    filter: str | None = Query(None, description="Filter by status: active or completed"),
+    search: str | None = Query(None, description="Search by todo content"),
     db: Session = Depends(get_db),
 ):
     week_end = week_start + timedelta(days=6)
-    statement = (
-        select(Todo)
-        .where(Todo.date >= week_start, Todo.date <= week_end)
-        .order_by(Todo.date.asc(), Todo.id.desc())
-    )
+    statement = select(Todo).where(Todo.date >= week_start, Todo.date <= week_end)
+    
+    # Apply filter
+    if filter == "active":
+        statement = statement.where(Todo.completed == False)
+    elif filter == "completed":
+        statement = statement.where(Todo.completed == True)
+    
+    # Apply search
+    if search:
+        statement = statement.where(Todo.content.contains(search))
+    
+    statement = statement.order_by(Todo.date.asc(), Todo.id.desc())
 
     return db.scalars(statement).all()
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 import DateSelector from './DateSelector'
 import TodoHeader from './TodoHeader'
@@ -23,6 +24,9 @@ export default function TodoClient({
   initialWeekStartKey,
   initialMessage,
 }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
   const todayKey = toDateKey(new Date())
   const [todos, setTodos] = useState(sortTodos(initialTodos))
   const [weekStartKey, setWeekStartKey] = useState(initialWeekStartKey)
@@ -30,7 +34,8 @@ export default function TodoClient({
   const [todoText, setTodoText] = useState('')
   const [editingTodoId, setEditingTodoId] = useState(null)
   const [editingText, setEditingText] = useState('')
-  const [currentFilter, setCurrentFilter] = useState('all')
+  const [currentFilter, setCurrentFilter] = useState(searchParams.get('filter') || 'all')
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [message, setMessage] = useState(initialMessage)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -39,17 +44,14 @@ export default function TodoClient({
   const weekEndDate = weekDates[6]
   const selectedDate = parseDateKey(selectedDateKey)
   const selectedTodos = todos.filter((todo) => todo.date === selectedDateKey)
-  const filteredTodos = selectedTodos.filter((todo) => {
-    if (currentFilter === 'active') {
-      return !todo.completed
-    }
+  const filteredTodos = selectedTodos
 
-    if (currentFilter === 'completed') {
-      return todo.completed
-    }
-
-    return true
-  })
+  const updateUrl = (filter, search) => {
+    const params = new URLSearchParams()
+    if (filter !== 'all') params.set('filter', filter)
+    if (search) params.set('search', search)
+    router.push(`?${params.toString()}`, { scroll: false })
+  }
 
   const requestJson = async (path, options) => {
     const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -72,17 +74,22 @@ export default function TodoClient({
     return response.json()
   }
 
-  const loadWeek = async (nextWeekStartKey, nextSelectedDateKey) => {
+  const loadWeek = async (nextWeekStartKey, nextSelectedDateKey, filter = 'all', search = '') => {
     setIsLoading(true)
     setMessage('')
 
     try {
-      const weekTodos = await requestJson(`/todos?week_start=${nextWeekStartKey}`)
+      let apiPath = `/todos?week_start=${nextWeekStartKey}`
+      if (filter !== 'all') apiPath += `&filter=${filter}`
+      if (search) apiPath += `&search=${encodeURIComponent(search)}`
+      
+      const weekTodos = await requestJson(apiPath)
       setTodos(sortTodos(weekTodos))
       setWeekStartKey(nextWeekStartKey)
       setSelectedDateKey(nextSelectedDateKey)
       setTodoText('')
       cancelEdit()
+      updateUrl(filter, search)
     } catch {
       setMessage('일정을 불러오지 못했습니다.')
     } finally {
@@ -223,12 +230,19 @@ export default function TodoClient({
       ? shiftedSelectedDateKey
       : nextWeekStartKey
 
-    loadWeek(nextWeekStartKey, nextSelectedDateKey)
+    loadWeek(nextWeekStartKey, nextSelectedDateKey, currentFilter, searchQuery)
   }
 
   const changeFilter = (filterValue) => {
     setCurrentFilter(filterValue)
     cancelEdit()
+    loadWeek(weekStartKey, selectedDateKey, filterValue, searchQuery)
+  }
+
+  const changeSearch = (query) => {
+    setSearchQuery(query)
+    cancelEdit()
+    loadWeek(weekStartKey, selectedDateKey, currentFilter, query)
   }
 
   return (
@@ -256,6 +270,7 @@ export default function TodoClient({
         filteredTodos={filteredTodos}
         currentFilter={currentFilter}
         filterOptions={FILTER_OPTIONS}
+        searchQuery={searchQuery}
         todoText={todoText}
         editingTodoId={editingTodoId}
         editingText={editingText}
@@ -265,6 +280,7 @@ export default function TodoClient({
         onAddTodo={addTodo}
         onTodoTextChange={setTodoText}
         onFilterChange={changeFilter}
+        onSearchChange={changeSearch}
         onStartEdit={startEdit}
         onSaveEdit={saveEdit}
         onCancelEdit={cancelEdit}
